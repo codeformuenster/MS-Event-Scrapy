@@ -27,8 +27,8 @@ See this example
 {
   "title": "Herr Roberz liest: Bauer Beck f\u00e4hrt weg",
   "subtitle": "F\u00fcr Kinder ab 4 Jahren, Eintritt frei",
-  "start_date": "2018-07-26 16:30:00",
-  "end_date": "2018-07-26 17:30:00",
+  "start_date": "2018-07-26T16:30:00",
+  "end_date": "2018-07-26T17:30:00",
   "location": "B\u00fccherei am Hansaplatz",
   "location_addresse": "Wolbecker Stra\u00dfe 97",
   "description": "\"Ein Bauer f\u00e4hrt nicht in den Urlaub\", denkt Bauer Beck, bis eines Tages die Magd Toni ans Meer f\u00e4hrt. Was die Magd kann, kann er auch. Kurzerhand schnappt er seine Tiere und f\u00e4hrt los ...",
