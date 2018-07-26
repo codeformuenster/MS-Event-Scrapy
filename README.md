@@ -8,7 +8,7 @@ https://docs.scrapy.org/en/latest/intro/install.html
 ## Usage
 To run the crawler and write the results into the file events.json use:
 
-   scrapy crawl EventsSpider -o events.json`
+   scrapy crawl EventsSpider -o events.json
 
 This will return today's events from Muenster's event calendar by default. You can also specify a start and end date:
 
