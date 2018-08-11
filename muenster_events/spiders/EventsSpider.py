@@ -14,27 +14,35 @@
 """
 
 import scrapy
+import urllib.request
+import urllib.parse
+import json
+import logging
 from datetime import datetime
 
 class EventsSpider(scrapy.Spider):
     name = 'EventsSpider'
     allowed_domains = ['muenster.de']
     start_url = 'https://www.muenster.de/veranstaltungskalender/scripts/frontend/suche.php'
+    mapquest_api_key = None
+    req_start_date = None
+    req_end_date = None
     
     def start_requests(self):
-        req_start_date = getattr(self, 'start', None)
-        req_end_date = getattr(self, 'end', None)
+        self.req_start_date = getattr(self, 'start', None)
+        self.req_end_date = getattr(self, 'end', None)
+        self.mapquest_api_key = getattr(self, 'mapquest_key', None)
         
-        if(req_start_date is None):
-            req_start_date = 'today'
+        if(self.req_start_date is None):
+            self.req_start_date = 'today'
         else:
-            if(req_start_date is not 'today' and req_end_date is None):
+            if(self.req_start_date is not 'today' and self.req_end_date is None):
                 self.log('End date not given, using "today" as start date.')
-                req_start_date = 'today'
+                self.req_start_date = 'today'
         
         # TODO: validate start/end date
         
-        yield scrapy.Request(self.start_url, self.parse, meta={'req_start_date' : req_start_date, 'req_end_date' : req_end_date})
+        yield scrapy.Request(self.start_url, self.parse)
 
     def parse(self, response):
         """Submit the search form searching for events that start today."""
@@ -43,17 +51,25 @@ class EventsSpider(scrapy.Spider):
         datum_bis = ''
         zeitraum = ''
         
-        if(response.meta['req_start_date'] is None or response.meta['req_start_date'] is 'today'):
+        if(self.req_start_date is None or self.req_start_date is 'today'):
             zeitraum = 'heute'
         else:
-            datum_von = response.meta['req_start_date']
-            datum_bis = response.meta['req_end_date']
+            datum_von = self.req_start_date
+            datum_bis = self.req_end_date
             zeitraum = 'zeitraum'
         
         return scrapy.FormRequest.from_response(
                 response,
                 formname='submit',
-                formdata={'datum_bis': datum_bis, 'datum_von': datum_von, 'submit': 'Suchen', 'suchstring': '', 'volltextsuche-verknuepfung': 'und', 'zeitraum': zeitraum, 'zielgruppe': 'alle'},
+                formdata={
+                        'datum_bis': datum_bis,
+                        'datum_von': datum_von,
+                        'submit': 'Suchen',
+                        'suchstring': '',
+                        'volltextsuche-verknuepfung':'und',
+                        'zeitraum': zeitraum,
+                        'zielgruppe': 'alle'
+                        },
                 callback=self.after_post
             )
 
@@ -108,6 +124,35 @@ class EventsSpider(scrapy.Spider):
         
         return (start_date, end_date)
     
+    def fetchMapquestCoordinates(self, location_adresse):
+        """Try calling the geocoding api from mapquest. It it fails return None
+            Documentation: https://developer.mapquest.com/documentation/open/geocoding-api/address/get/"""
+        
+        contents_json = None
+        try:
+            parsed_location_adresse = urllib.parse.quote(location_adresse)
+            mapquest_url = "http://open.mapquestapi.com/geocoding/v1/address?key=pOGXdswM0sGKb3cLm1Wl484oA5TqPWCd&location=" + parsed_location_adresse + ",M%C3%BCnster,Germany"
+            logging.debug('Attempting to fetch ' + mapquest_url)
+            contents = urllib.request.urlopen(mapquest_url).read()
+            contents_json = json.loads(contents)
+        except Exception as e:
+            logging.warning('Location geocoding failed with exception: ' + str(e))
+            return None
+        
+        status_code = contents_json['info']['statuscode']
+        if(status_code  != 0): # some kind of error happened
+            logging.warning('Location geocoding failed with code ' + status_code )
+            return None
+        
+        latLng = contents_json['results'][0]['locations'][0]['latLng']
+        lat = latLng['lat']
+        lng = latLng['lng']
+        
+        if(lat > 52.3 or lat < 51.8 or lng > 8 or lng < 7.3):
+            return None # not in Münster
+        
+        return (lat, lng)
+    
     def extract_event(self, response):
         """Callback function for the detail pages. We find the indivudal data points and try to bring the date/time in proper form, then
         summarize it into a Event-object and return it."""
@@ -125,6 +170,15 @@ class EventsSpider(scrapy.Spider):
         start_date = times[0]
         end_date = times[1]
        
+        lat = ''
+        lng = ''
+        
+        # if a mapquest api key was provided we use it for geocoding
+        if(self.mapquest_api_key is not None):
+            latLng = self.fetchMapquestCoordinates(location_adresse)
+            if(latLng is not None):
+                lat = latLng[0]
+                lng = latLng[1]
         
         return Event(title = title, 
               subtitle = subtitle, 
@@ -132,6 +186,8 @@ class EventsSpider(scrapy.Spider):
               end_date = end_date, 
               location = location, 
               location_addresse = location_adresse, 
+              location_lat = lat,
+              location_lng = lng,
               description = description, 
               link = link,
               category = response.meta['category']
@@ -145,6 +201,8 @@ class Event(scrapy.Item):
     end_date = scrapy.Field()
     location = scrapy.Field()
     location_addresse = scrapy.Field()
+    location_lat = scrapy.Field()
+    location_lng = scrapy.Field()
     description = scrapy.Field()
     link = scrapy.Field()
     category = scrapy.Field()

@@ -19,6 +19,10 @@ The start and end date must be in format DD.MM.YYYY, including trailing zeroes.
 The following is also allowed, but can be left away. The end date will be ignored if given.
 
     scrapy crawl EventsSpider -o events.json -a start=today
+	
+The scraper also supports geocoding the location adresses via the Mapquest Open Geocoding API. For this you need to get a API key from https://developer.mapquest.com/user/me/profile . If you don't provide a key or of the location could not be determined, the corresponding result fields will be empty.
+
+    scrapy crawl EventsSpider -o events.json -a mapquest_key=YOUR_KEY_HERE
 
 ## Result format
 
@@ -31,6 +35,8 @@ See this example
   "end_date": "2018-07-26T17:30:00",
   "location": "B\u00fccherei am Hansaplatz",
   "location_addresse": "Wolbecker Stra\u00dfe 97",
+  "location_lat": "51.955654",
+  "location_lon": "7.645638",
   "description": "\"Ein Bauer f\u00e4hrt nicht in den Urlaub\", denkt Bauer Beck, bis eines Tages die Magd Toni ans Meer f\u00e4hrt. Was die Magd kann, kann er auch. Kurzerhand schnappt er seine Tiere und f\u00e4hrt los ...",
   "link": "http://www.stadt-muenster.de/buecherei/veranstaltungen/",
   "category": "Kabarett, Lesungen, Comedy"
