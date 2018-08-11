@@ -20,7 +20,7 @@ The following is also allowed, but can be left away. The end date will be ignore
 
     scrapy crawl EventsSpider -o events.json -a start=today
 	
-The scraper also supports geocoding the location adresses via the Mapquest Open Geocoding API. For this you need to get a API key from https://developer.mapquest.com/user/me/profile . If you don't provide a key or of the location could not be determined, the corresponding result fields will be empty.
+The scraper also supports geocoding the location adresses via the Mapquest Open Geocoding API. For this you need to get a API key from https://developer.mapquest.com/user/me/profile . If you don't provide a key or if the location could not be determined, the corresponding result fields will be empty.
 
     scrapy crawl EventsSpider -o events.json -a mapquest_key=YOUR_KEY_HERE
 
