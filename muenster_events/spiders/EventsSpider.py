@@ -112,7 +112,7 @@ class EventsSpider(scrapy.Spider):
                 
         start_date = ''
         end_date = ''
-                
+        
         # produce proper ISO conform datetime strings
         if(start_time is ''):
             start_date = datetime.strptime(date, '%d.%m.%Y') # case: no time
@@ -131,7 +131,7 @@ class EventsSpider(scrapy.Spider):
         contents_json = None
         try:
             parsed_location_adresse = urllib.parse.quote(location_adresse)
-            mapquest_url = "http://open.mapquestapi.com/geocoding/v1/address?key=pOGXdswM0sGKb3cLm1Wl484oA5TqPWCd&location=" + parsed_location_adresse + ",M%C3%BCnster,Germany"
+            mapquest_url = "http://open.mapquestapi.com/geocoding/v1/address?key=" + self.mapquest_api_key +"&location=" + parsed_location_adresse + ",M%C3%BCnster,Germany"
             logging.debug('Attempting to fetch ' + mapquest_url)
             contents = urllib.request.urlopen(mapquest_url).read()
             contents_json = json.loads(contents)
