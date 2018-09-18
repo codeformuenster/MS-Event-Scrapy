@@ -8,11 +8,11 @@ https://docs.scrapy.org/en/latest/intro/install.html
 ## Usage
 To run the crawler and write the results into the file events.json use:
 
-   scrapy crawl EventsSpider -o events.json
+    scrapy crawl EventsSpider -o events.json
 
 This will return today's events from Muenster's event calendar by default. You can also specify a start and end date:
 
-   scrapy crawl EventsSpider -o events.json -a start=26.07.2018 -a end=05.08.2018
+    scrapy crawl EventsSpider -o events.json -a start=26.07.2018 -a end=05.08.2018
 
 The start and end date must be in format DD.MM.YYYY, including trailing zeroes.
 
@@ -20,10 +20,12 @@ The following is also allowed, but can be left away. The end date will be ignore
 
     scrapy crawl EventsSpider -o events.json -a start=today
 	
-The scraper also supports geocoding the location adresses via the Mapquest Open Geocoding API. For this you need to get a API key from https://developer.mapquest.com/user/me/profile . If you don't provide a key or if the location could not be determined, the corresponding result fields will be empty.
+The scraper also supports geocoding the location adresses via the Mapquest Open Geocoding API. For this you need to get a API key from https://developer.mapquest.com/user/me/profile . If you don't provide a key or if the location could not be determined, the corresponding result fields will be empty. The key needs to be either set as a environment variable under the key MAPQUEST_KEY or can be given as a parameter:
 
     scrapy crawl EventsSpider -o events.json -a mapquest_key=YOUR_KEY_HERE
 
+The parameter always takes precedence over the environment variable.
+	
 ## Result format
 
 See this example

@@ -18,6 +18,7 @@ import urllib.request
 import urllib.parse
 import json
 import logging
+import os
 from datetime import datetime
 
 class EventsSpider(scrapy.Spider):
@@ -25,13 +26,17 @@ class EventsSpider(scrapy.Spider):
     allowed_domains = ['muenster.de']
     start_url = 'https://www.muenster.de/veranstaltungskalender/scripts/frontend/suche.php'
     mapquest_api_key = None
+    if('MAPQUEST_KEY' in os.environ):
+        mapquest_api_key = os.environ['MAPQUEST_KEY']
     req_start_date = None
     req_end_date = None
     
     def start_requests(self):
         self.req_start_date = getattr(self, 'start', None)
         self.req_end_date = getattr(self, 'end', None)
-        self.mapquest_api_key = getattr(self, 'mapquest_key', None)
+        param_mapquest_api_key = getattr(self, 'mapquest_key', None);
+        if(param_mapquest_api_key is not None):    
+            self.mapquest_api_key = getattr(self, 'mapquest_key', None)
         
         if(self.req_start_date is None):
             self.req_start_date = 'today'
