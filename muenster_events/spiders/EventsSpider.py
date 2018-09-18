@@ -113,6 +113,15 @@ class EventsSpider(scrapy.Spider):
         start_date = ''
         end_date = ''
         
+        # sometimes, if the event contains two start/end times, the time looks like
+        # 14.00 u. 16.00
+        # in that case, use the first one for now. In future it would be better
+        # to retain all times
+        if(' u. ' in start_time):
+            start_time = start_time.split(' u. ')[0]
+        if(' u. ' in end_time):
+            end_time = end_time.split(' u. ')[0]
+        
         # produce proper ISO conform datetime strings
         if(start_time is ''):
             start_date = datetime.strptime(date, '%d.%m.%Y') # case: no time
