@@ -179,6 +179,7 @@ class EventsSpider(scrapy.Spider):
         location = self.getText(response, 'location')
         location_adresse = self.getText(response, 'location-adresse')
         link = response.xpath("//div[@class='detail-link']/a/@href").extract_first().strip(' \t\n\r')
+        pos = response.xpath("//input[@name='pos']/@value").extract_first().strip(' \t\n\r')
         
         times = self.produce_dates(raw_datetime);
         start_date = times[0]
@@ -204,7 +205,8 @@ class EventsSpider(scrapy.Spider):
               location_lng = lng,
               description = description, 
               link = link,
-              category = response.meta['category']
+              category = response.meta['category'],
+              pos = pos
           )
         
         
@@ -220,3 +222,4 @@ class Event(scrapy.Item):
     description = scrapy.Field()
     link = scrapy.Field()
     category = scrapy.Field()
+    pos = scrapy.Field()
