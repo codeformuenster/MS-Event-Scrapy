@@ -35,17 +35,18 @@ To push events into an Elasticsearch you must provide the ES-url + prefix, eithe
 See this example
 ```
 {
-  "title": "Herr Roberz liest: Bauer Beck f\u00e4hrt weg",
-  "subtitle": "F\u00fcr Kinder ab 4 Jahren, Eintritt frei",
-  "start_date": "2018-07-26T16:30:00",
-  "end_date": "2018-07-26T17:30:00",
-  "location": "B\u00fccherei am Hansaplatz",
-  "location_addresse": "Wolbecker Stra\u00dfe 97",
-  "location_lat": "51.955654",
-  "location_lon": "7.645638",
-  "description": "\"Ein Bauer f\u00e4hrt nicht in den Urlaub\", denkt Bauer Beck, bis eines Tages die Magd Toni ans Meer f\u00e4hrt. Was die Magd kann, kann er auch. Kurzerhand schnappt er seine Tiere und f\u00e4hrt los ...",
-  "link": "http://www.stadt-muenster.de/buecherei/veranstaltungen/",
-  "category": "Kabarett, Lesungen, Comedy"
-}
+        "title": "Junge Kunst im Wettbewerb - NRW.BANK.Kunstpreis",
+        "subtitle": "\u00d6ffentliche F\u00fchrung",
+        "start_date": "2018-11-08T18:00:00",
+        "end_date": "",
+        "location": "NRW.BANK",
+        "location_addresse": "Friedrichstra\u00dfe 1",
+        "location_lat": 51.961501,
+        "location_lng": 7.636492,
+        "description": "Die NRW.BANK vergibt in diesem Jahr zum zweiten Mal einen Preis f\u00fcr Junge Kunst und zeigt die Wettbewerbsarbeiten der Studierenden und Absolventen der Kunstakademien in D\u00fcsseldorf und M\u00fcnster sowie der Folkwang Universit\u00e4t der K\u00fcnste Essen in einer gemeinsamen Ausstellung.",
+        "link": "https://www.nrwbank.de/de/Landingpages/kunstpreis.html",
+        "category": "F\u00fchrungen",
+        "pos": "973918112018"
+    }
 ```
 If the end time was not given end_date will be empty. The start_date might also not contain a time if it was not given. Notice the escaped unicode characters: this is the standard behavior of Scrapy's JSON exporter.
