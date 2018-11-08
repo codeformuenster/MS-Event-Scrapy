@@ -261,9 +261,9 @@ class EventsSpider(scrapy.Spider):
               pos = pos
           )
         
-        print('Check before ES: ' + str(self.elasticsearch_url) + '; ' + str(lat) + '; ' + str(lng))
         
         if(self.elasticsearch_url is not None and isinstance(lat, float) and isinstance(lng, float)):
+            print('Check before ES: ' + str(self.elasticsearch_url) + "places/event_" + event['pos'] + ' at pos lat:' + str(lat) + '; lng:' + str(lng))
             self.log('Putting into ES')
             self.put_into_es(event)
         
