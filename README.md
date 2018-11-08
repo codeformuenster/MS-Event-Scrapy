@@ -2,8 +2,10 @@
 This Scrapy-project can be used to extract event information from the event calendar of the city of Münster.
 
 ## Dependencies and installation
-The only dependency of this project is Scrapy itself. See the official documentation to see how it is installed:
+The only mandatory dependency of this project is Scrapy itself. See the official documentation to see how it is installed:
 https://docs.scrapy.org/en/latest/intro/install.html
+
+If you want to push events into an Elasticsearch you also need the package `elasticsearch`.
 
 ## Usage
 To run the crawler and write the results into the file events.json use:
@@ -20,11 +22,13 @@ The following is also allowed, but can be left away. The end date will be ignore
 
     scrapy crawl EventsSpider -o events.json -a start=today
 	
-The scraper also supports geocoding the location adresses via the Mapquest Open Geocoding API. For this you need to get a API key from https://developer.mapquest.com/user/me/profile . If you don't provide a key or if the location could not be determined, the corresponding result fields will be empty. The key needs to be either set as a environment variable under the key MAPQUEST_KEY or can be given as a parameter:
+The scraper also supports geocoding the location adresses via the Mapquest Open Geocoding API. For this you need to get a API key from https://developer.mapquest.com/user/me/profile . If you don't provide a key or if the location could not be determined, the corresponding result fields will be empty. The key needs to be either set as a environment variable under the key `MAPQUEST_KEY` or can be given as a parameter:
 
     scrapy crawl EventsSpider -o events.json -a mapquest_key=YOUR_KEY_HERE
 
 The parameter always takes precedence over the environment variable.
+
+To push events into an Elasticsearch you must provide the ES-url + prefix, either via the parameter `-a elasticsearch_url_prefix` or the environment variable `ELASTICSEARCH_URL_PREFIX` which should be in the form `http(s)://ip:port/prefix`. Again, the parameter takes precedence over the environment variable. The term `places` is always appended to the prefix. Only events which contain a lat/lon-coordinate will be pushed.
 	
 ## Result format
 
