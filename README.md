@@ -35,18 +35,18 @@ To push events into an Elasticsearch you must provide the ES-url + prefix, eithe
 See this example
 ```
 {
-        "title": "Junge Kunst im Wettbewerb - NRW.BANK.Kunstpreis",
-        "subtitle": "\u00d6ffentliche F\u00fchrung",
-        "start_date": "2018-11-08T18:00:00",
-        "end_date": "",
-        "location": "NRW.BANK",
-        "location_addresse": "Friedrichstra\u00dfe 1",
-        "location_lat": 51.961501,
-        "location_lng": 7.636492,
-        "description": "Die NRW.BANK vergibt in diesem Jahr zum zweiten Mal einen Preis f\u00fcr Junge Kunst und zeigt die Wettbewerbsarbeiten der Studierenden und Absolventen der Kunstakademien in D\u00fcsseldorf und M\u00fcnster sowie der Folkwang Universit\u00e4t der K\u00fcnste Essen in einer gemeinsamen Ausstellung.",
-        "link": "https://www.nrwbank.de/de/Landingpages/kunstpreis.html",
-        "category": "F\u00fchrungen",
-        "pos": "973918112018"
-    }
+    "title": "Lesung: Des Kaisers neue Kleider",
+    "subtitle": "F\u00fcr Kinder ab 4 Jahren, Eintritt frei",
+    "start_date": "2018-11-08T15:00:00",
+    "end_date": "2018-11-08T15:40:00",
+    "location": "B\u00fccherei Kinderhaus",
+    "location_addresse": "Idenbrockplatz 8",
+    "location_lat": 51.995708,
+    "location_lng": 7.602987,
+    "description": "Lesung anl\u00e4sslich der M\u00fcnsteraner M\u00e4rchenwochen. Betr\u00fcger schw\u00e4tzen dem eitlen Kaiser ein prachtvolles Gewand auf, das er stolz seinen Untertanen vorf\u00fchrt. \u00dcberrascht klatschen sie Beifall, bis ein Kind ausspricht, was alle erkannt haben: Der Kaiser ist ja nackt!",
+    "link": "http://www.stadt-muenster.de/buecherei/veranstaltungen/fuer-kinder.html",
+    "category": "Kabarett, Lesungen, Comedy",
+    "pos": "1054218112018"
+}
 ```
 If the end time was not given end_date will be empty. The start_date might also not contain a time if it was not given. Notice the escaped unicode characters: this is the standard behavior of Scrapy's JSON exporter.
