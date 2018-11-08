@@ -28,6 +28,8 @@ class EventsSpider(scrapy.Spider):
     mapquest_api_key = None
     if('MAPQUEST_KEY' in os.environ):
         mapquest_api_key = os.environ['MAPQUEST_KEY']
+    if('ELASTICSEARCH_URL_PREFIX' in os.environ):
+        elasticsearch_url_param = os.environ['ELASTICSEARCH_URL_PREFIX']
     req_start_date = None
     req_end_date = None
     
@@ -45,6 +47,10 @@ class EventsSpider(scrapy.Spider):
                 self.log('End date not given, using "today" as start date.')
                 self.req_start_date = 'today'
         
+        if(hasattr(self, 'elasticsearch_url_param') == False):
+            self.elasticsearch_url_param = None
+            
+        self.elasticsearch_url = getattr(self, 'elasticsearch_url_prefix', self.elasticsearch_url_param)
         # TODO: validate start/end date
         
         yield scrapy.Request(self.start_url, self.parse)
@@ -163,9 +169,55 @@ class EventsSpider(scrapy.Spider):
         lng = latLng['lng']
         
         if(lat > 52.3 or lat < 51.8 or lng > 8 or lng < 7.3):
-            return None # not in Münster
+            return None # not in Muenster
         
         return (lat, lng)
+    
+    def put_into_es(self, event):
+        """Push the given event into Elasticsearch"""
+        from elasticsearch import Elasticsearch
+        
+        esurl, index_prefix = os.environ['ELASTICSEARCH_URL_PREFIX'].rsplit("/", maxsplit=1)
+        
+        if(hasattr(self, 'es') == False):
+            self.es = Elasticsearch(esurl)
+            
+        content = {
+                    'address': {
+                        'geo': {
+                            'lat': event['location_lat'],
+                            'lon': event['location_lng']
+                        },
+                        'geometry': {
+                            'type': 'Point',
+                            'coordinates': [event['location_lng'],
+                                event['location_lat']
+                            ]
+                        },
+                        'street': event['location_addresse']
+                    },
+                    'date_start': event['start_date'],
+                    'type': 'event',
+                    'name': event['title'],
+                    'id': event['pos'],
+                    'description': event['description'],
+                    'properties': {
+                        'ID': event['pos'],
+                        'name': event['title'],
+                        'link': event['link']
+                    },
+                    'subtitle': event['subtitle'],
+                    'location': event['location']
+                }
+                    
+        if('end_date' in event and len(event['end_date']) > 0):
+            content['date_end'] = event['end_date']
+            
+        res = self.es.index(index = f'{index_prefix}places',
+                            doc_type = '_doc',
+                            body = content,
+                            id = 'event_' + event['pos'])
+        self.log(res)
     
     def extract_event(self, response):
         """Callback function for the detail pages. We find the indivudal data points and try to bring the date/time in proper form, then
@@ -195,7 +247,7 @@ class EventsSpider(scrapy.Spider):
                 lat = latLng[0]
                 lng = latLng[1]
         
-        return Event(title = title, 
+        event = Event(title = title, 
               subtitle = subtitle, 
               start_date = start_date, 
               end_date = end_date, 
@@ -208,6 +260,14 @@ class EventsSpider(scrapy.Spider):
               category = response.meta['category'],
               pos = pos
           )
+        
+        print('Check before ES: ' + str(self.elasticsearch_url) + '; ' + str(lat) + '; ' + str(lng))
+        
+        if(self.elasticsearch_url is not None and isinstance(lat, float) and isinstance(lng, float)):
+            self.log('Putting into ES')
+            self.put_into_es(event)
+        
+        return event
         
         
 class Event(scrapy.Item):
@@ -223,3 +283,4 @@ class Event(scrapy.Item):
     link = scrapy.Field()
     category = scrapy.Field()
     pos = scrapy.Field()
+			
