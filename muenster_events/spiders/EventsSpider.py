@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 """ Copyright (C) 2018 Christian Römer
     This program is free software: you can redistribute it and/or modify
@@ -200,14 +201,15 @@ class EventsSpider(scrapy.Spider):
                     'type': 'event',
                     'name': event['title'],
                     'id': event['pos'],
-                    'description': event['description'],
                     'properties': {
                         'ID': event['pos'],
                         'name': event['title'],
-                        'link': event['link']
-                    },
-                    'subtitle': event['subtitle'],
-                    'location': event['location']
+                        'subtitle': event['subtitle'],
+                        'description': event['description'],
+                        'link': event['link'],
+                        'location': event['location'],
+                        'street': event['location_addresse']
+                    }
                 }
                     
         if('end_date' in event and len(event['end_date']) > 0):
