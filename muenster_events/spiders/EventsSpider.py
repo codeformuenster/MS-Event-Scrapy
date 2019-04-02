@@ -20,7 +20,8 @@ import urllib.parse
 import json
 import logging
 import os
-from datetime import datetime
+import datetime
+import pytz
 
 class EventsSpider(scrapy.Spider):
     name = 'EventsSpider'
@@ -37,21 +38,42 @@ class EventsSpider(scrapy.Spider):
     def start_requests(self):
         self.req_start_date = getattr(self, 'start', None)
         self.req_end_date = getattr(self, 'end', None)
-        param_mapquest_api_key = getattr(self, 'mapquest_key', None);
-        if(param_mapquest_api_key is not None):    
-            self.mapquest_api_key = getattr(self, 'mapquest_key', None)
+        self.req_window = getattr(self, 'window', None)
+        self.mapquest_api_key = getattr(self, 'mapquest_key', None)
+        
+        if(self.req_window is not None and self.req_end_date is not None):
+                self.log('Provice either a window or a end date, but not both')
+                raise ValueError('Provie either a window or a end date, but not both')
         
         if(self.req_start_date is None):
             self.req_start_date = 'today'
-        else:
-            if(self.req_start_date is not 'today' and self.req_end_date is None):
-                self.log('End date not given, using "today" as start date.')
-                self.req_start_date = 'today'
+        if(self.req_window is not None):
+            try:
+                self.req_window = int(self.req_window)
+            except:
+                self.log('Provide a integer as window')
+                raise ValueError('Provide a integer as window')
+                
+            if(self.req_window < 0):
+                self.log('Provide a positive integer as window')
+                raise ValueError('Provice a positive integer as window')
+            
+            if self.req_start_date == 'today':
+                start = datetime.datetime.now(pytz.timezone('Europe/Berlin'))
+            else:
+                start = datetime.datetime.strptime(self.req_start_date, '%d.%m.%Y')
+            end = start + datetime.timedelta(days=self.req_window)
+            self.req_start_date = start.strftime('%d.%m.%Y')
+            self.req_end_date = end.strftime('%d.%m.%Y')
+        elif(self.req_start_date is not 'today' and self.req_end_date is None):
+            self.log('End date not given, using "today" as start date.')
+            self.req_start_date = 'today'
         
         if(hasattr(self, 'elasticsearch_url_param') == False):
             self.elasticsearch_url_param = None
             
         self.elasticsearch_url = getattr(self, 'elasticsearch_url_prefix', self.elasticsearch_url_param)
+        
         # TODO: validate start/end date
         
         yield scrapy.Request(self.start_url, self.parse)
@@ -136,12 +158,12 @@ class EventsSpider(scrapy.Spider):
         
         # produce proper ISO conform datetime strings
         if(start_time is ''):
-            start_date = datetime.strptime(date, '%d.%m.%Y') # case: no time
+            start_date = datetime.datetime.strptime(date, '%d.%m.%Y') # case: no time
         else:
-            start_date = datetime.strptime(date + ' ' + start_time, '%d.%m.%Y %H.%M').isoformat()
+            start_date = datetime.datetime.strptime(date + ' ' + start_time, '%d.%m.%Y %H.%M').isoformat()
             
         if(end_time is not ''):
-            end_date = datetime.strptime(date + ' ' + end_time, '%d.%m.%Y %H.%M').isoformat()
+            end_date = datetime.datetime.strptime(date + ' ' + end_time, '%d.%m.%Y %H.%M').isoformat()
         
         return (start_date, end_date)
     
