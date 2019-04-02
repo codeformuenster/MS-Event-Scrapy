@@ -16,6 +16,10 @@ This will return today's events from Muenster's event calendar by default. You c
 
     scrapy crawl EventsSpider -o events.json -a start=26.07.2018 -a end=05.08.2018
 
+Alternatively you can provide a window of days. Only providing a window will pull all events starting from today. If you also provide a start date the window will start counting on that day. E.g. start=01.01.2019 and window=3 will pull all events between 01.01. and 04.01. inclusive.
+
+    scrapy crawl EventsSpider -o events.json -a window=3
+
 The start and end date must be in format DD.MM.YYYY, including trailing zeroes.
 
 The following is also allowed, but can be left away. The end date will be ignored if given.
