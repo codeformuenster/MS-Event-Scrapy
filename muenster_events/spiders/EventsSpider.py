@@ -29,13 +29,11 @@ class EventsSpider(scrapy.Spider):
     start_url = (
         "https://www.muenster.de/veranstaltungskalender/scripts/frontend/suche.php"
     )
-    mapquest_api_key = None
-    if "MAPQUEST_KEY" in os.environ:
-        mapquest_api_key = os.environ["MAPQUEST_KEY"]
     if "ELASTICSEARCH_URL_PREFIX" in os.environ:
         elasticsearch_url_param = os.environ["ELASTICSEARCH_URL_PREFIX"]
     req_start_date = None
     req_end_date = None
+
 
     def start_requests(self):
         self.req_start_date = getattr(self, "start", None)
@@ -46,6 +44,9 @@ class EventsSpider(scrapy.Spider):
         if self.req_window is not None and self.req_end_date is not None:
             self.log("Provice either a window or a end date, but not both")
             raise ValueError("Provie either a window or a end date, but not both")
+
+        if self.mapquest_api_key is None and "MAPQUEST_KEY" in os.environ:
+            self.mapquest_api_key = os.environ["MAPQUEST_KEY"]
 
         if self.req_start_date is None:
             self.req_start_date = "today"
@@ -188,6 +189,8 @@ class EventsSpider(scrapy.Spider):
     def fetchMapquestCoordinates(self, location_adresse):
         """Try calling the geocoding api from mapquest. It it fails return None
             Documentation: https://developer.mapquest.com/documentation/open/geocoding-api/address/get/"""
+
+        self.log("Attempt geocoding: " + location_adresse)
 
         contents_json = None
         try:
