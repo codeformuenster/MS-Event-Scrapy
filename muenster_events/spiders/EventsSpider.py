@@ -280,8 +280,11 @@ class EventsSpider(scrapy.Spider):
         link = (
             response.xpath("//div[@class='detail-link']/a/@href")
             .extract_first()
-            .strip(" \t\n\r")
         )
+        if link is not None:
+            link = link.strip(" \t\n\r")
+        else:
+            link = None
         pos = (
             response.xpath("//input[@name='pos']/@value")
             .extract_first()
