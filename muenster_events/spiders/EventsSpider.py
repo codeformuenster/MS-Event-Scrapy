@@ -19,6 +19,7 @@ import urllib.parse
 import json
 import logging
 import os
+import sys
 import datetime
 import pytz
 
@@ -31,6 +32,7 @@ class EventsSpider(scrapy.Spider):
     )
     if "ELASTICSEARCH_URL_PREFIX" in os.environ:
         elasticsearch_url_param = os.environ["ELASTICSEARCH_URL_PREFIX"]
+        print("ELASTIC URL " + elasticsearch_url_param)
     req_start_date = None
     req_end_date = None
 
@@ -49,7 +51,11 @@ class EventsSpider(scrapy.Spider):
             self.mapquest_api_key = os.environ["MAPQUEST_KEY"]
 
         if self.req_start_date is None:
-            self.req_start_date = "today"
+            start = datetime.datetime.now(pytz.timezone("Europe/Berlin")) + datetime.timedelta(days=1)
+            self.req_start_date = start.strftime("%d.%m.%Y")
+            end = datetime.datetime.now(pytz.timezone("Europe/Berlin")) + datetime.timedelta(days=8)
+            self.req_end_date = end.strftime("%d.%m.%Y")
+
         if self.req_window is not None:
             try:
                 self.req_window = int(self.req_window)
@@ -68,6 +74,7 @@ class EventsSpider(scrapy.Spider):
             end = start + datetime.timedelta(days=self.req_window)
             self.req_start_date = start.strftime("%d.%m.%Y")
             self.req_end_date = end.strftime("%d.%m.%Y")
+
         elif self.req_start_date is not "today" and self.req_end_date is None:
             self.log('End date not given, using "today" as start date.')
             self.req_start_date = "today"
@@ -79,7 +86,7 @@ class EventsSpider(scrapy.Spider):
             self, "elasticsearch_url_prefix", self.elasticsearch_url_param
         )
 
-        # TODO: validate start/end date
+        # TODO: validate start/end dates
 
         yield scrapy.Request(self.start_url, self.parse)
 
@@ -96,6 +103,11 @@ class EventsSpider(scrapy.Spider):
             datum_von = self.req_start_date
             datum_bis = self.req_end_date
             zeitraum = "zeitraum"
+
+        self.log("------------ START PARAMETERS -------------- ")
+        self.log("START: " + datum_von)
+        self.log("END: " + datum_bis)
+        self.log("------------  ")
 
         return scrapy.FormRequest.from_response(
             response,
@@ -129,6 +141,84 @@ class EventsSpider(scrapy.Spider):
             yield response.follow(
                 href, callback=self.extract_event, meta={"category": category}
             )
+
+
+    def extract_event(self, response):
+        """Callback function for the detail pages. We find the indivudal data points and try to bring the date/time in proper form, then
+        summarize it into a Event-object and return it."""
+
+        # extract the interesting data points
+        title = self.getText(response, "titel")
+        subtitle = self.getText(response, "untertitel")
+        raw_datetime = self.getText(response, "datum-uhrzeit")
+        description = self.getText(response, "detailbeschreibung")
+        location = self.getText(response, "location")
+        location_adresse = self.getText(response, "location-adresse")
+        link = (
+            response.xpath("//div[@class='detail-link']/a/@href")
+            .extract_first()
+        )
+        if link is not None:
+            link = link.strip(" \t\n\r")
+        else:
+            link = None
+        pos = (
+            response.xpath("//input[@name='pos']/@value")
+            .extract_first()
+            .strip(" \t\n\r")
+        )
+
+        times = self.produce_dates(raw_datetime)
+        start_date = times[0]
+        end_date = times[1]
+
+        lat = ""
+        lng = ""
+
+        # if a mapquest api key was provided we use it for geocoding
+        if self.mapquest_api_key is not None:
+            latLng = self.fetchMapquestCoordinates(location_adresse)
+            if latLng is not None:
+                lat = latLng[0]
+                lng = latLng[1]
+        else: 
+            self.log("No mapquest_api_key! Skip location mapping.")
+
+        event = Event(
+            title=title,
+            subtitle=subtitle,
+            start_date=start_date,
+            end_date=end_date,
+            location=location,
+            location_addresse=location_adresse,
+            location_lat=lat,
+            location_lng=lng,
+            description=description,
+            link=link,
+            category=response.meta["category"],
+            pos=pos,
+        )
+
+        if (
+            self.elasticsearch_url is not None
+            and isinstance(lat, float)
+            and isinstance(lng, float)
+        ):
+            print(
+                "Check before ES: "
+                + str(self.elasticsearch_url)
+                + "places/event_"
+                + event["pos"]
+                + " at pos lat:"
+                + str(lat)
+                + "; lng:"
+                + str(lng)
+            )
+            self.log("Putting into ES")
+            self.put_into_es(event)
+
+        return event
+
 
     def getText(self, response, clazz):
         """Find the first div with the class clazz and extract the text, stripping whitespaces and such."""
@@ -269,79 +359,6 @@ class EventsSpider(scrapy.Spider):
         )
         self.log(res)
 
-    def extract_event(self, response):
-        """Callback function for the detail pages. We find the indivudal data points and try to bring the date/time in proper form, then
-        summarize it into a Event-object and return it."""
-
-        # extract the interesting data points
-        title = self.getText(response, "titel")
-        subtitle = self.getText(response, "untertitel")
-        raw_datetime = self.getText(response, "datum-uhrzeit")
-        description = self.getText(response, "detailbeschreibung")
-        location = self.getText(response, "location")
-        location_adresse = self.getText(response, "location-adresse")
-        link = (
-            response.xpath("//div[@class='detail-link']/a/@href")
-            .extract_first()
-        )
-        if link is not None:
-            link = link.strip(" \t\n\r")
-        else:
-            link = None
-        pos = (
-            response.xpath("//input[@name='pos']/@value")
-            .extract_first()
-            .strip(" \t\n\r")
-        )
-
-        times = self.produce_dates(raw_datetime)
-        start_date = times[0]
-        end_date = times[1]
-
-        lat = ""
-        lng = ""
-
-        # if a mapquest api key was provided we use it for geocoding
-        if self.mapquest_api_key is not None:
-            latLng = self.fetchMapquestCoordinates(location_adresse)
-            if latLng is not None:
-                lat = latLng[0]
-                lng = latLng[1]
-
-        event = Event(
-            title=title,
-            subtitle=subtitle,
-            start_date=start_date,
-            end_date=end_date,
-            location=location,
-            location_addresse=location_adresse,
-            location_lat=lat,
-            location_lng=lng,
-            description=description,
-            link=link,
-            category=response.meta["category"],
-            pos=pos,
-        )
-
-        if (
-            self.elasticsearch_url is not None
-            and isinstance(lat, float)
-            and isinstance(lng, float)
-        ):
-            print(
-                "Check before ES: "
-                + str(self.elasticsearch_url)
-                + "places/event_"
-                + event["pos"]
-                + " at pos lat:"
-                + str(lat)
-                + "; lng:"
-                + str(lng)
-            )
-            self.log("Putting into ES")
-            self.put_into_es(event)
-
-        return event
 
 
 class Event(scrapy.Item):
