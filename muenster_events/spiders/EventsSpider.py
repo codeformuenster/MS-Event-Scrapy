@@ -32,7 +32,6 @@ class EventsSpider(scrapy.Spider):
     )
     if "ELASTICSEARCH_URL_PREFIX" in os.environ:
         elasticsearch_url_param = os.environ["ELASTICSEARCH_URL_PREFIX"]
-        print("ELASTIC URL " + elasticsearch_url_param)
     req_start_date = None
     req_end_date = None
 
@@ -107,6 +106,7 @@ class EventsSpider(scrapy.Spider):
         self.log("------------ START PARAMETERS -------------- ")
         self.log("START: " + datum_von)
         self.log("END: " + datum_bis)
+        self.log("ES: " + str(self.elasticsearch_url))
         self.log("------------  ")
 
         return scrapy.FormRequest.from_response(
@@ -293,8 +293,10 @@ class EventsSpider(scrapy.Spider):
                 + ",M%C3%BCnster,Germany"
             )
             logging.debug("Attempting to fetch " + mapquest_url)
-            contents = urllib.request.urlopen(mapquest_url).read()
+            resource = urllib.request.urlopen(mapquest_url)
+            contents = resource.read().decode(resource.headers.get_content_charset())
             contents_json = json.loads(contents)
+
         except Exception as e:
             logging.warning("Location geocoding failed with exception: " + str(e))
             return None
@@ -308,7 +310,9 @@ class EventsSpider(scrapy.Spider):
         lat = latLng["lat"]
         lng = latLng["lng"]
 
+        self.log("LOCATION: " + str(lat) + ", " + str(lng))
         if lat > 52.3 or lat < 51.8 or lng > 8 or lng < 7.3:
+            self.log("NOT MUENSTER! Setting location to ZERO")
             return None  # not in Muenster
 
         return (lat, lng)
@@ -323,6 +327,7 @@ class EventsSpider(scrapy.Spider):
 
         if hasattr(self, "es") == False:
             self.es = Elasticsearch(esurl)
+
 
         content = {
             "address": {
@@ -352,7 +357,7 @@ class EventsSpider(scrapy.Spider):
             content["date_end"] = event["end_date"]
 
         res = self.es.index(
-            index=f"{index_prefix}places",
+            index=(index_prefix + "places"),
             doc_type="_doc",
             body=content,
             id="event_" + event["pos"],
